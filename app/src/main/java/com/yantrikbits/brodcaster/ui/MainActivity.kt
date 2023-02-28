@@ -1,36 +1,52 @@
-package com.yantrikbits.brodcaster
+package com.yantrikbits.brodcaster.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.permissionx.guolindev.PermissionX
+import com.yantrikbits.brodcaster.R
+import com.yantrikbits.brodcaster.adapters.BluetoothDeviceAdapter
 import com.yantrikbits.brodcaster.constants.BluetoothStatus
 import com.yantrikbits.brodcaster.constants.Constant
+import com.yantrikbits.brodcaster.model.BTDevice
 
 class MainActivity : AppCompatActivity() {
 
     private var bluetoothStatus: BluetoothStatus = BluetoothStatus.OFF
     private lateinit var bluetoothOnButton: AppCompatButton
     private lateinit var bluetoothOffButton: AppCompatButton
+    private lateinit var boundDevices: RecyclerView
     private var bluetoothAdapter: BluetoothAdapter? = null
     private lateinit var bluetoothEnableIntent: Intent
+    private val listOfDevice: ArrayList<BTDevice> = ArrayList()
 
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         bluetoothOnButton = findViewById(R.id.bluetoothOnButton)
         bluetoothOffButton = findViewById(R.id.bluetoothOffButton)
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        boundDevices = findViewById(R.id.bound_devices)
+        val bluetoothManager = this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
         bluetoothEnableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
         permission()
         onBluetooth()
         bluetoothOff()
+        getBoundedDevice()
+        addDataToBluetoothDevicesAdapter()
     }
 
     @Deprecated("Deprecated in Java")
@@ -75,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun bluetoothOff() {
         bluetoothOffButton.setOnClickListener {
             if (bluetoothAdapter!!.isEnabled) {
@@ -89,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun permission() {
         PermissionX.init(this)
             .permissions(
@@ -115,6 +133,29 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getBoundedDevice() {
+        val findBluetoothDevices = bluetoothAdapter!!.bondedDevices
+        findBluetoothDevices.forEach { device ->
+            listOfDevice.add(
+                BTDevice(
+                    deviceName = device.name,
+                    UUIDS = device.uuids.toString(),
+                    address = device.address
+                )
+            )
+        }
+    }
+
+    private fun addDataToBluetoothDevicesAdapter() {
+        boundDevices.adapter = BluetoothDeviceAdapter(
+            this@MainActivity,
+            listOfDevice
+        )
+        boundDevices.layoutManager = LinearLayoutManager(this@MainActivity)
+        boundDevices.hasFixedSize()
     }
 
 }

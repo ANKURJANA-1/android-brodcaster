@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity">
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/bluetoothOnButton"
@@ -26,4 +26,18 @@
         app:layout_constraintStart_toEndOf="@+id/bluetoothOnButton"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <View
+        android:id="@+id/devider"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/bluetoothOffButton" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/bound_devices"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/devider" />
 </androidx.constraintlayout.widget.ConstraintLayout>

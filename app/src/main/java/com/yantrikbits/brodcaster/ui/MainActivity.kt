@@ -3,9 +3,11 @@ package com.yantrikbits.brodcaster.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -16,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.permissionx.guolindev.PermissionX
 import com.yantrikbits.brodcaster.R
+import com.yantrikbits.brodcaster.Utils.ReceiverBroadcaster
 import com.yantrikbits.brodcaster.adapters.BluetoothDeviceAdapter
 import com.yantrikbits.brodcaster.constants.BluetoothStatus
 import com.yantrikbits.brodcaster.constants.Constant
@@ -29,8 +32,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var boundDevices: RecyclerView
     private var bluetoothAdapter: BluetoothAdapter? = null
     private lateinit var bluetoothEnableIntent: Intent
+    private lateinit var bluetoothDiscoveryIntentFilter: IntentFilter
     private val listOfDevice: ArrayList<BTDevice> = ArrayList()
-
+    private lateinit var receiverBroadcaster: ReceiverBroadcaster
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,14 +43,16 @@ class MainActivity : AppCompatActivity() {
         bluetoothOnButton = findViewById(R.id.bluetoothOnButton)
         bluetoothOffButton = findViewById(R.id.bluetoothOffButton)
         boundDevices = findViewById(R.id.bound_devices)
+        receiverBroadcaster = ReceiverBroadcaster(listOfDevice)
         val bluetoothManager = this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         bluetoothEnableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
         permission()
         onBluetooth()
         bluetoothOff()
-        getBoundedDevice()
+        //getBoundedDevice()
         addDataToBluetoothDevicesAdapter()
+        registerReceiver()
     }
 
     @Deprecated("Deprecated in Java")
@@ -89,6 +95,7 @@ class MainActivity : AppCompatActivity() {
             }
             bluetoothStatus = BluetoothStatus.ON
         }
+        bluetoothAdapter!!.startDiscovery()
     }
 
     @SuppressLint("MissingPermission")
@@ -112,7 +119,8 @@ class MainActivity : AppCompatActivity() {
             .permissions(
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADMIN
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH_SCAN
             )
             .onExplainRequestReason { scope, deniedList ->
                 scope.showRequestReasonDialog(
@@ -158,4 +166,18 @@ class MainActivity : AppCompatActivity() {
         boundDevices.hasFixedSize()
     }
 
+    @SuppressLint("MissingPermission")
+    private fun registerReceiver() {
+        bluetoothAdapter!!.startDiscovery()
+        bluetoothDiscoveryIntentFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        registerReceiver(
+            receiverBroadcaster,
+            bluetoothDiscoveryIntentFilter
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(receiverBroadcaster)
+    }
 }
